@@ -151,5 +151,6 @@ public class ClientProperties {
     private String applicationId;
     private String smallImageKey;
     private String bigImageKey;
+    private String discordPrereleaseFeedback;
   }
 }
