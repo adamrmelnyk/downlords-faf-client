@@ -2,6 +2,7 @@ package com.faforever.client.game;
 
 import com.faforever.client.config.ClientProperties;
 import com.faforever.client.discord.DiscordRichPresenceService;
+import com.faforever.client.fa.CloseGameEvent;
 import com.faforever.client.fa.ForgedAllianceService;
 import com.faforever.client.fa.RatingMode;
 import com.faforever.client.fa.relay.event.RehostRequestEvent;
@@ -654,5 +655,17 @@ public class GameService implements InitializingBean {
       game = uidToGameInfoBean.remove(gameInfoMessage.getUid());
     }
     eventBus.post(new GameRemovedEvent(game));
+  }
+
+  public void stopGame() {
+    if (process != null && process.isAlive()) {
+      log.info("ForgedAlliance still running, destroying process");
+      process.destroy();
+    }
+  }
+
+  @Subscribe
+  public void onGameCloseRequested(CloseGameEvent event) {
+    stopGame();
   }
 }
