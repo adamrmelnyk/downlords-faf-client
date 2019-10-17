@@ -8,6 +8,7 @@ import com.faforever.client.fx.StringListCell;
 import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.game.PlayerStatus;
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.moderator.BanDialogController;
 import com.faforever.client.moderator.ModeratorService;
 import com.faforever.client.notification.ImmediateNotification;
 import com.faforever.client.notification.NotificationService;
@@ -17,10 +18,11 @@ import com.faforever.client.player.PlayerService;
 import com.faforever.client.player.SocialStatus;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.PreferencesService;
-import com.faforever.client.remote.domain.PeriodType;
 import com.faforever.client.replay.ReplayService;
 import com.faforever.client.theme.UiService;
 import com.google.common.eventbus.EventBus;
+import com.jfoenix.animation.alert.JFXAlertAnimation;
+import com.jfoenix.controls.JFXAlert;
 import com.jfoenix.controls.JFXButton;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -29,20 +31,16 @@ import javafx.beans.value.WeakChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
-import javafx.util.StringConverter;
+import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,12 +95,6 @@ public class ChatUserContextMenuController implements Controller<ContextMenu> {
   private ChatChannelUser chatUser;
   public MenuItem kickGameItem;
   public MenuItem kickLobbyItem;
-  public TextField durationText;
-  public ChoiceBox<PeriodType> periodTypeChoiceBox;
-  public TextField reasonText;
-  public SeparatorMenuItem banSeperator;
-  public Label successsLabel;
-  public Button banButton;
 
   @SuppressWarnings("FieldCanBeLocal")
   private ChangeListener<Player> playerChangeListener;
@@ -142,19 +134,6 @@ public class ChatUserContextMenuController implements Controller<ContextMenu> {
       }
 
       showModeratorOptions(true);
-      periodTypeChoiceBox.setConverter(new StringConverter<PeriodType>() {
-        @Override
-        public String toString(PeriodType object) {
-          return object.name();
-        }
-
-        @Override
-        public PeriodType fromString(String string) {
-          return PeriodType.valueOf(string);
-        }
-      });
-      periodTypeChoiceBox.setItems(FXCollections.observableArrayList(PeriodType.values()));
-      JavaFxUtil.makeNumericTextField(durationText, 5);
     });
   }
 
@@ -163,7 +142,6 @@ public class ChatUserContextMenuController implements Controller<ContextMenu> {
     kickGameItem.setVisible(enable);
     kickLobbyItem.setVisible(enable);
     banItem.setVisible(enable);
-    banSeperator.setVisible(enable);
   }
 
   @NotNull
@@ -337,13 +315,15 @@ public class ChatUserContextMenuController implements Controller<ContextMenu> {
 
   public void onBan(ActionEvent actionEvent) {
     actionEvent.consume();
-    if (durationText.getText().isEmpty() || periodTypeChoiceBox.getSelectionModel().getSelectedIndex() < 0) {
-      return;
-    }
-    moderatorService.banPlayer(getPlayer().getId(), Integer.parseInt(durationText.getText()), periodTypeChoiceBox.getSelectionModel().getSelectedItem(), reasonText.getText());
-    successsLabel.setVisible(true);
-    banButton.setDisable(true);
+    JFXAlert<?> dialog = new JFXAlert<>((Stage) getRoot().getOwnerWindow());
 
+    BanDialogController controller = ((BanDialogController) uiService.loadFxml("theme/moderator/ban_dialog.fxml"))
+        .setPlayer(getPlayer())
+        .setCloseListener(dialog::close);
+
+    dialog.setContent(controller.getDialogLayout());
+    dialog.setAnimation(JFXAlertAnimation.TOP_ANIMATION);
+    dialog.show();
   }
 
   public void onJoinGameSelected() {
